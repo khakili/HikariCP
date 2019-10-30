@@ -85,6 +85,10 @@ abstract class PoolBase
 
    private volatile boolean isValidChecked;
 
+   /**
+    * 利用HikariConfig创建池
+    * @param config 配置对象
+    */
    PoolBase(final HikariConfig config)
    {
       this.config = config;
@@ -299,6 +303,7 @@ abstract class PoolBase
    // ***********************************************************************
 
    /**
+    * 初始化DataSource
     * Create/initialize the underlying DataSource.
     */
    private void initializeDataSource()
@@ -310,15 +315,18 @@ abstract class PoolBase
       final String driverClassName = config.getDriverClassName();
       final String dataSourceJNDI = config.getDataSourceJNDI();
       final Properties dataSourceProperties = config.getDataSourceProperties();
-
+      //配置对象中的DataSource
       DataSource ds = config.getDataSource();
+      //如果配置中的DataSource没有初始化且驱动类不为空，使用驱动类反射创建DataSource
       if (dsClassName != null && ds == null) {
          ds = createInstance(dsClassName, DataSource.class);
          PropertyElf.setTargetFromProperties(ds, dataSourceProperties);
       }
+      //如果url不为空且DataSource为空，创建DataSource子类DriverDataSource
       else if (jdbcUrl != null && ds == null) {
          ds = new DriverDataSource(jdbcUrl, driverClassName, dataSourceProperties, username, password);
       }
+      //如果DataSource为空且有JNDIDataSource，则从JNDI中获取数据源
       else if (dataSourceJNDI != null && ds == null) {
          try {
             InitialContext ic = new InitialContext();
@@ -329,7 +337,9 @@ abstract class PoolBase
       }
 
       if (ds != null) {
+         //设置登录超时时间
          setLoginTimeout(ds);
+         //网络超时的检测逻辑（MySQL会有特殊的实现）
          createNetworkTimeoutExecutor(ds, dsClassName, jdbcUrl);
       }
 
@@ -337,6 +347,7 @@ abstract class PoolBase
    }
 
    /**
+    * 创建连接
     * Obtain connection from data source.
     *
     * @return a Connection connection

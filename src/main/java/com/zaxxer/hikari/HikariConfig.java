@@ -45,6 +45,9 @@ import static com.zaxxer.hikari.util.UtilityElf.safeIsAssignableFrom;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * Hikari配置对象
+ */
 @SuppressWarnings({"SameParameterValue", "unused"})
 public class HikariConfig implements HikariConfigMXBean
 {
@@ -97,10 +100,11 @@ public class HikariConfig implements HikariConfigMXBean
    private Object metricRegistry;
    private Object healthCheckRegistry;
    private Properties healthCheckProperties;
-
+   //标记配置是否已经载入（连接池初始化完成）
    private volatile boolean sealed;
 
    /**
+    * 默认构造函数，使用默认值初始化配置（如果环境变量中已经配置了hikaricp.configurationFile，则会加载该路径的配置）
     * Default constructor
     */
    public HikariConfig()
@@ -116,7 +120,7 @@ public class HikariConfig implements HikariConfigMXBean
       idleTimeout = IDLE_TIMEOUT;
       initializationFailTimeout = 1;
       isAutoCommit = true;
-
+      //如果环境变量中有 hikaricp.configurationFile 这个属性，则将内容载入
       String systemProp = System.getProperty("hikaricp.configurationFile");
       if (systemProp != null) {
          loadProperties(systemProp);
@@ -124,6 +128,7 @@ public class HikariConfig implements HikariConfigMXBean
    }
 
    /**
+    * 使用指定配置加载
     * Construct a HikariConfig from the specified properties object.
     *
     * @param properties the name of the property file
@@ -135,6 +140,7 @@ public class HikariConfig implements HikariConfigMXBean
    }
 
    /**
+    * 使用Class.getResourceAsStream(propertyFileName)加载指定位置的配置
     * Construct a HikariConfig from the specified property file name.  <code>propertyFileName</code>
     * will first be treated as a path in the file-system, and if that fails the
     * Class.getResourceAsStream(propertyFileName) will be tried.
@@ -908,6 +914,9 @@ public class HikariConfig implements HikariConfigMXBean
       return null;
    }
 
+   /**
+    *   验证参数是否合法
+    */
    @SuppressWarnings("StatementWithEmptyBody")
    public void validate()
    {
@@ -965,6 +974,9 @@ public class HikariConfig implements HikariConfigMXBean
       }
    }
 
+   /**
+    * 检查所有数字配置项是否合法，以及将不合法的配置项使用默认值覆盖
+    */
    private void validateNumerics()
    {
       if (maxLifetime != 0 && maxLifetime < SECONDS.toMillis(30)) {
@@ -1010,11 +1022,17 @@ public class HikariConfig implements HikariConfigMXBean
       }
    }
 
+   /**
+    * 检查配置是否已经载入完毕，如果已经载入需要使用HikariConfigMXBean在运行时修改配置
+    */
    private void checkIfSealed()
    {
       if (sealed) throw new IllegalStateException("The configuration of the pool is sealed once started. Use HikariConfigMXBean for runtime changes.");
    }
 
+   /**
+    * 打印配置项
+    */
    private void logConfiguration()
    {
       LOGGER.debug("{} - configuration:", poolName);

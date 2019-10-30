@@ -63,6 +63,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
+ * 为Hikari提供池的能力
  * This is the primary connection pool class that provides the basic
  * pooling behavior for HikariCP.
  *
@@ -99,6 +100,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    private ScheduledFuture<?> houseKeeperTask;
 
    /**
+    * 利用HikariConfig 创建池
     * Construct a HikariPool with the specified configuration.
     *
     * @param config a HikariConfig instance
@@ -545,6 +547,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    }
 
    /**
+    * 快速失败
     * If initializationFailFast is configured, check that we have DB connectivity.
     *
     * @throws PoolInitializationException if fails to create or validate connection

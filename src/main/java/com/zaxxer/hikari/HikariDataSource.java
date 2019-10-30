@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.zaxxer.hikari.pool.HikariPool.POOL_NORMAL;
 
 /**
+ * Hikari数据源
  * The HikariCP pooled DataSource.
  *
  * @author Brett Wooldridge
@@ -40,13 +41,15 @@ import static com.zaxxer.hikari.pool.HikariPool.POOL_NORMAL;
 public class HikariDataSource extends HikariConfig implements DataSource, Closeable
 {
    private static final Logger LOGGER = LoggerFactory.getLogger(HikariDataSource.class);
-
+   //标记连接是否已经停止
    private final AtomicBoolean isShutdown = new AtomicBoolean();
-
+   // 通过传入HikariConfig构造DataSource会初始化此连接池
    private final HikariPool fastPathPool;
+   // 延迟加载的连接池，会在getConnection时初始化（double-check）
    private volatile HikariPool pool;
 
    /**
+    * 默认初始化数据源，使用父类默认构造函数初始化配置（不初始化连接池）
     * Default constructor.  Setters are used to configure the pool.  Using
     * this constructor vs. {@link #HikariDataSource(HikariConfig)} will
     * result in {@link #getConnection()} performance that is slightly lower
@@ -63,6 +66,7 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
    }
 
    /**
+    * 使用指定配置对象（HikariConfig）初始化数据源，并初始化连接池
     * Construct a HikariDataSource with the specified configuration.  The
     * {@link HikariConfig} is copied and the pool is started by invoking this
     * constructor.
@@ -74,10 +78,13 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
     */
    public HikariDataSource(HikariConfig configuration)
    {
+      //验证配置
       configuration.validate();
+      //拷贝入参配置
       configuration.copyStateTo(this);
 
       LOGGER.info("{} - Starting...", configuration.getPoolName());
+      //初始化连接池
       pool = fastPathPool = new HikariPool(this);
       LOGGER.info("{} - Start completed.", configuration.getPoolName());
 
@@ -89,18 +96,22 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
    // ***********************************************************************
 
    /** {@inheritDoc} */
+   //获取连接
    @Override
    public Connection getConnection() throws SQLException
    {
+      //判断连接是否已经关闭
       if (isClosed()) {
          throw new SQLException("HikariDataSource " + this + " has been closed.");
       }
-
+      //判断是否有连接池
       if (fastPathPool != null) {
+         //从池里获取
          return fastPathPool.getConnection();
       }
 
       // See http://en.wikipedia.org/wiki/Double-checked_locking#Usage_in_Java
+      //双锁获取连接
       HikariPool result = pool;
       if (result == null) {
          synchronized (this) {
@@ -178,7 +189,9 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
       throw new SQLFeatureNotSupportedException();
    }
 
-   /** {@inheritDoc} */
+   /**
+    * 获取iface类型的连接（获取DataSource）
+    */
    @Override
    @SuppressWarnings("unchecked")
    public <T> T unwrap(Class<T> iface) throws SQLException
@@ -202,7 +215,10 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
       throw new SQLException("Wrapped DataSource is not an instance of " + iface);
    }
 
-   /** {@inheritDoc} */
+   /**
+    * 判断传入类是否为HikariDataSource
+    *
+    */
    @Override
    public boolean isWrapperFor(Class<?> iface) throws SQLException
    {
@@ -282,12 +298,14 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
          }
       }
    }
-
+   // ***********************************************************************
+   // Hikari独有的方法
    // ***********************************************************************
    //                        HikariCP-specific methods
    // ***********************************************************************
 
    /**
+    * 返回连接池状态是否为正常
     * Returns {@code true} if the pool as been started and is not suspended or shutdown.
     *
     * @return {@code true} if the pool as been started and is not suspended or shutdown.
@@ -335,6 +353,7 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
    }
 
    /**
+    * 关闭连接池
     * Shutdown the DataSource and its associated pool.
     */
    @Override

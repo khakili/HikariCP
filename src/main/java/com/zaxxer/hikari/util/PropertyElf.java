@@ -44,6 +44,11 @@ public final class PropertyElf
       // cannot be constructed
    }
 
+   /**
+    * 如果target是HikariConfig对象，将properties载入配置，否则利用反射将properties载入指定target的成员变量
+    * @param target 配置载入的目标对象
+    * @param properties 需要载入的配置
+    */
    public static void setTargetFromProperties(final Object target, final Properties properties)
    {
       if (target == null || properties == null) {
