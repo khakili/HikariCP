@@ -72,9 +72,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBagStateListener
 {
    private final Logger logger = LoggerFactory.getLogger(HikariPool.class);
-
+   //池状态-正常
    public static final int POOL_NORMAL = 0;
+   //池状态-暂停
    public static final int POOL_SUSPENDED = 1;
+   //池状态-停止
    public static final int POOL_SHUTDOWN = 2;
 
    public volatile int poolState;

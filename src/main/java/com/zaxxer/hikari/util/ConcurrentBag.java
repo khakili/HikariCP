@@ -42,7 +42,11 @@ import org.slf4j.LoggerFactory;
 
 import com.zaxxer.hikari.util.ConcurrentBag.IConcurrentBagEntry;
 
+
 /**
+ *
+ *   并发包。。。。实现了LinkedBlockingQueue 和 LinkedTransferQueue的功能
+ *   （避免了有锁 编程）
  * This is a specialized concurrent bag that achieves superior performance
  * to LinkedBlockingQueue and LinkedTransferQueue for the purposes of a
  * connection pool.  It uses ThreadLocal storage when possible to avoid

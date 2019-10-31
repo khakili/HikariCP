@@ -21,6 +21,7 @@ import java.sql.SQLTransientException;
 import java.util.concurrent.Semaphore;
 
 /**
+ * 基于信号量的数据库连接池的暂停锁
  * This class implements a lock that can be used to suspend and resume the pool.  It
  * also provides a faux implementation that is used when the feature is disabled that
  * hopefully gets fully "optimized away" by the JIT.
@@ -42,11 +43,13 @@ public class SuspendResumeLock
       @Override
       public void resume() {}
    };
-
+   //最大并发数
    private static final int MAX_PERMITS = 10000;
+   //信号量
    private final Semaphore acquisitionSemaphore;
 
    /**
+    * 默认构造器
     * Default constructor
     */
    public SuspendResumeLock()
@@ -54,33 +57,51 @@ public class SuspendResumeLock
       this(true);
    }
 
+   /**
+    * 私有构造函数 ，用于创建公平的信号量
+    * @param createSemaphore
+    */
    private SuspendResumeLock(final boolean createSemaphore)
    {
       acquisitionSemaphore = (createSemaphore ? new Semaphore(MAX_PERMITS, true) : null);
    }
 
+   /**
+    * 获取一个令牌
+    * @throws SQLException
+    */
    public void acquire() throws SQLException
    {
+      //尝试获取令牌
       if (acquisitionSemaphore.tryAcquire()) {
          return;
       }
       else if (Boolean.getBoolean("com.zaxxer.hikari.throwIfSuspended")) {
          throw new SQLTransientException("The pool is currently suspended and configured to throw exceptions upon acquisition");
       }
-
+      //获取一个不可中断的令牌
       acquisitionSemaphore.acquireUninterruptibly();
    }
 
+   /**
+    * 归还令牌
+    */
    public void release()
    {
       acquisitionSemaphore.release();
    }
 
+   /**
+    * 将令牌全取走，达到暂停状态
+    */
    public void suspend()
    {
       acquisitionSemaphore.acquireUninterruptibly(MAX_PERMITS);
    }
 
+   /**
+    * 归还所有令牌，恢复正常状态
+    */
    public void resume()
    {
       acquisitionSemaphore.release(MAX_PERMITS);

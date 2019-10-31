@@ -35,6 +35,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 
 /**
+ * Hibernate SPI 实现
  * Connection provider for Hibernate 4.3.
  *
  * @author Brett Wooldridge, Luca Burgazzoli

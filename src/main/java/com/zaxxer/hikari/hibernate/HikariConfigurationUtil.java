@@ -34,6 +34,7 @@ public class HikariConfigurationUtil
    public static final String CONFIG_PREFIX_DATASOURCE = "hibernate.hikari.dataSource.";
 
    /**
+    * 将Hibernate配置加载到HikariConfig
     * Create/load a HikariConfig from Hibernate properties.
     *
     * @param props a map of Hibernate properties

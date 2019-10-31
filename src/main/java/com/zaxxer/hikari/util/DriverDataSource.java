@@ -30,6 +30,9 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ *
+ */
 public final class DriverDataSource implements DataSource
 {
    private static final Logger LOGGER = LoggerFactory.getLogger(DriverDataSource.class);
@@ -40,22 +43,31 @@ public final class DriverDataSource implements DataSource
    private final Properties driverProperties;
    private Driver driver;
 
+   /**
+    * 构造函数（载入drive的过程）
+    * @param jdbcUrl
+    * @param driverClassName
+    * @param properties
+    * @param username
+    * @param password
+    */
    public DriverDataSource(String jdbcUrl, String driverClassName, Properties properties, String username, String password)
    {
       this.jdbcUrl = jdbcUrl;
       this.driverProperties = new Properties();
-
+      //将传入properties放入成员变量中
       for (Entry<Object, Object> entry : properties.entrySet()) {
          driverProperties.setProperty(entry.getKey().toString(), entry.getValue().toString());
       }
-
+      //传入username 不为空，则尝试使用传入username替换配置中user（如果传入配置中没有user配置）
       if (username != null) {
          driverProperties.put(USER, driverProperties.getProperty("user", username));
       }
+      //传入password 不为空，则尝试使用传入password替换配置中password（如果传入配置中没有password配置）
       if (password != null) {
          driverProperties.put(PASSWORD, driverProperties.getProperty("password", password));
       }
-
+      //传入driverClassName不为空，则在DriverManager中查找该className
       if (driverClassName != null) {
          Enumeration<Driver> drivers = DriverManager.getDrivers();
          while (drivers.hasMoreElements()) {
@@ -65,7 +77,7 @@ public final class DriverDataSource implements DataSource
                break;
             }
          }
-
+         //DriverManager没有传入的driverClassName，则尝试直接加载driver
          if (driver == null) {
             LOGGER.warn("Registered driver with driverClassName={} was not found, trying direct instantiation.", driverClassName);
             Class<?> driverClass = null;
@@ -99,7 +111,7 @@ public final class DriverDataSource implements DataSource
             }
          }
       }
-
+      //脱敏url中的密码（打日志用）
       final String sanitizedUrl = jdbcUrl.replaceAll("([?&;]password=)[^&#;]*(.*)", "$1<masked>$2");
       try {
          if (driver == null) {

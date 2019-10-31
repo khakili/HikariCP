@@ -31,6 +31,7 @@ import javassist.*;
 import javassist.bytecode.ClassFile;
 
 /**
+ * 创建JDBC代理工厂
  * This class generates the proxy objects for {@link Connection}, {@link Statement},
  * {@link PreparedStatement}, and {@link CallableStatement}.  Additionally it injects
  * method bodies into the {@link ProxyFactory} class methods that can instantiate

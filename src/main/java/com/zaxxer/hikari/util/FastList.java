@@ -31,6 +31,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
+ * 和ArrayList很像的FastList（非线程安全）
  * Fast list without range checking.
  *
  * @author Brett Wooldridge
@@ -38,12 +39,15 @@ import java.util.function.UnaryOperator;
 public final class FastList<T> implements List<T>, RandomAccess, Serializable
 {
    private static final long serialVersionUID = -4598088075242913858L;
-
+   //Item类型
    private final Class<?> clazz;
+   //实际存储Item的数组
    private T[] elementData;
+   //容量
    private int size;
 
    /**
+    * 构造指定类型的FastList，长度32
     * Construct a FastList with a default size of 32.
     * @param clazz the Class stored in the collection
     */
@@ -67,6 +71,9 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
    }
 
    /**
+    * 添加元素
+    * 1.判断size是否大于数组长度，不大于直接放到size++位置
+    * 2.如果大于数组长度，则扩容，扩容大小为原长度的两倍
     * Add an element to the tail of the FastList.
     *
     * @param element the element to add
@@ -80,6 +87,7 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
       else {
          // overflow-conscious code
          final int oldCapacity = elementData.length;
+         //oldCapacity*2
          final int newCapacity = oldCapacity << 1;
          @SuppressWarnings("unchecked")
          final T[] newElementData = (T[]) Array.newInstance(clazz, newCapacity);
@@ -92,6 +100,7 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
    }
 
    /**
+    * 获取指定位置的元素
     * Get the element at the specified index.
     *
     * @param index the index of the element to get
@@ -104,6 +113,7 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
    }
 
    /**
+    * 删除末尾元素（不缩减数组，将末尾元素置为null）
     * Remove the last element from the list.  No bound check is performed, so if this
     * method is called on an empty list and ArrayIndexOutOfBounds exception will be
     * thrown.
@@ -118,6 +128,8 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
    }
 
    /**
+    * 删除指定元素，从存储数组末尾倒序判断（判断元素是否相等使用==，并没有equal）
+    * 并且只删除第一个匹配到的元素
     * This remove method is most efficient when the element being removed
     * is the last element.  Equality is identity based, not equals() based.
     * Only the first matching element is removed.
@@ -142,6 +154,7 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
    }
 
    /**
+    * 清空集合（将数组所有元素赋值为null）
     * Clear the FastList.
     */
    @Override
@@ -155,6 +168,7 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
    }
 
    /**
+    * 获取集合实际存储数组长度（不包含null）
     * Get the current number of elements in the FastList.
     *
     * @return the number of current elements
@@ -166,6 +180,10 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
    }
 
    /** {@inheritDoc} */
+   /**
+    * 判断集合是否为空（不计null）
+    * @return
+    */
    @Override
    public boolean isEmpty()
    {
@@ -174,6 +192,9 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
 
    /** {@inheritDoc} */
    @Override
+   /**
+    * 替换指定位置的元素，并返回旧元素
+    */
    public T set(int index, T element)
    {
       T old = elementData[index];
@@ -183,6 +204,9 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
 
    /** {@inheritDoc} */
    @Override
+   /**
+    * 删除指定位置元素，返回删除位置元素
+    */
    public T remove(int index)
    {
       if (size == 0) {
@@ -210,6 +234,9 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
 
    /** {@inheritDoc} */
    @Override
+   /**
+    * 迭代方法，返回Iterator
+    */
    public Iterator<T> iterator()
    {
       return new Iterator<T>() {
@@ -228,11 +255,13 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
                return elementData[index++];
             }
 
-            throw new NoSuchElementException("No more elements in FastList"); 
+            throw new NoSuchElementException("No more elements in FastList");
          }
       };
    }
-
+   //********************************************************
+   //以下List的方法均不支持
+   //********************************************************
    /** {@inheritDoc} */
    @Override
    public Object[] toArray()
