@@ -89,6 +89,7 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
          final int oldCapacity = elementData.length;
          //oldCapacity*2
          final int newCapacity = oldCapacity << 1;
+         //采用读写分离
          @SuppressWarnings("unchecked")
          final T[] newElementData = (T[]) Array.newInstance(clazz, newCapacity);
          System.arraycopy(elementData, 0, newElementData, 0, oldCapacity);
@@ -145,6 +146,7 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
             if (numMoved > 0) {
                System.arraycopy(elementData, index + 1, elementData, index, numMoved);
             }
+            //释放引用
             elementData[--size] = null;
             return true;
          }
