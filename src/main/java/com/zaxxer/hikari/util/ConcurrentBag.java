@@ -125,6 +125,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    }
 
    /**
+    * 获取entry，可以指定超时时间
     * The method will borrow a BagEntry from the bag, blocking for the
     * specified timeout if none are available.
     *
@@ -135,48 +136,57 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
     */
    public T borrow(long timeout, final TimeUnit timeUnit) throws InterruptedException {
       // Try the thread-local list first
+      //先尝试从ThreadLocal中取，避免竞争
       final List<Object> list = threadList.get();
       for (int i = list.size() - 1; i >= 0; i--) {
          final Object entry = list.remove(i);
          @SuppressWarnings("unchecked") final T bagEntry = weakThreadLocals ? ((WeakReference<T>) entry).get() : (T) entry;
+         //判断entry是否在使用中
          if (bagEntry != null && bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_IN_USE)) {
             return bagEntry;
          }
       }
-
+      //ThreadLocal中没有取到entry，则去共享队列中拿
       // Otherwise, scan the shared list ... then poll the handoff queue
+      //计数器+1
       final int waiting = waiters.incrementAndGet();
       try {
          for (T bagEntry : sharedList) {
+            //判断entry是否在使用中
             if (bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_IN_USE)) {
                // If we may have stolen another waiter's connection, request another bag add.
+               //如果有两个以上的线程在竞争获取entry,则触发监听器，创建entry
                if (waiting > 1) {
                   listener.addBagItem(waiting - 1);
                }
                return bagEntry;
             }
          }
-
+         //没有从集合中获取entry，则触发监听器，创建entry
          listener.addBagItem(waiting);
 
          timeout = timeUnit.toNanos(timeout);
          do {
             final long start = currentTime();
+            //尝试从队列中获取entry
             final T bagEntry = handoffQueue.poll(timeout, NANOSECONDS);
+            //如果获取到了，将entry设置为使用中，并返回
             if (bagEntry == null || bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_IN_USE)) {
                return bagEntry;
             }
-
             timeout -= elapsedNanos(start);
+            //循环，直到超时，返回null
          } while (timeout > 10_000);
 
          return null;
       } finally {
+         //释放计数器（-1）
          waiters.decrementAndGet();
       }
    }
 
    /**
+    * 归还entry
     * This method will return a borrowed object to the bag.  Objects
     * that are borrowed from the bag but never "requited" will result
     * in a memory leak.
@@ -225,6 +235,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
 
       sharedList.add(bagEntry);
 
+      //自旋，直到有entry被拿走，或者没有线程在等待获取entry
       // spin until a thread takes it or none are waiting
       while (waiters.get() > 0 && bagEntry.getState() == STATE_NOT_IN_USE && !handoffQueue.offer(bagEntry)) {
          yield();
@@ -232,6 +243,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    }
 
    /**
+    * 移除一个entry（移除的entry必须要是STATE_IN_USE，或者STATE_RESERVED状态）
     * Remove a value from the bag.  This method should only be called
     * with objects obtained by <code>borrow(long, TimeUnit)</code> or <code>reserve(T)</code>
     *
@@ -255,6 +267,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    }
 
    /**
+    * AutoClose接口实现，停止ConcurrentBag服务
     * Close the bag to further adds.
     */
    @Override
@@ -263,6 +276,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    }
 
    /**
+    * 返回当前指定状态的集合
     * This method provides a "snapshot" in time of the BagEntry
     * items in the bag in the specified state.  It does not "lock"
     * or reserve items in any way.  Call <code>reserve(T)</code>
@@ -278,6 +292,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    }
 
    /**
+    * 返回当前集合的快照（原样复制当前集合）
     * This method provides a "snapshot" in time of the bag items.  It
     * does not "lock" or reserve items in any way.  Call <code>reserve(T)</code>
     * on items in the list, or understand the concurrency implications of
@@ -291,6 +306,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    }
 
    /**
+    * 使entry变为不可用
     * The method is used to make an item in the bag "unavailable" for
     * borrowing.  It is primarily used when wanting to operate on items
     * returned by the <code>values(int)</code> method.  Items that are
@@ -307,6 +323,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    }
 
    /**
+    * 使entry变为可用
     * This method is used to make an item reserved via <code>reserve(T)</code>
     * available again for borrowing.
     *
@@ -334,6 +351,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    }
 
    /**
+    * 获取指定状态entry的数量
     * Get a count of the number of items in the specified state at the time of this call.
     *
     * @param state the state of the items to count
