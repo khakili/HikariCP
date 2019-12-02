@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import static com.zaxxer.hikari.util.ClockSource.*;
 
 /**
+ * ConcurrentBag存储的Entry（用来维护连接池中的连接）
  * Entry used in the ConcurrentBag to track Connection instances.
  *
  * @author Brett Wooldridge
@@ -36,22 +37,30 @@ import static com.zaxxer.hikari.util.ClockSource.*;
 final class PoolEntry implements IConcurrentBagEntry
 {
    private static final Logger LOGGER = LoggerFactory.getLogger(PoolEntry.class);
+   //给ConcurrentBag提供原子化更新属性的能力
    private static final AtomicIntegerFieldUpdater<PoolEntry> stateUpdater;
-
+   //实际的连接
    Connection connection;
+   //以下两个事件用于回收连接与日志追踪
+   //最后一次访问
    long lastAccessed;
+   //最后一次使用
    long lastBorrowed;
 
    @SuppressWarnings("FieldCanBeLocal")
+   //PoolEntry的状态，默认为未使用
    private volatile int state = 0;
+   //是否驱逐
    private volatile boolean evict;
-
+   //定时器，用户回收连接
    private volatile ScheduledFuture<?> endOfLife;
-
+   //用于存储Statement
    private final FastList<Statement> openStatements;
+   //连接池
    private final HikariPool hikariPool;
-
+   //只读标志
    private final boolean isReadOnly;
+   //自动提交标志
    private final boolean isAutoCommit;
 
    static
@@ -140,6 +149,7 @@ final class PoolEntry implements IConcurrentBagEntry
 
    // ***********************************************************************
    //                      IConcurrentBagEntry methods
+   //                      为ConcurrentBag存储元素提供原子操作
    // ***********************************************************************
 
    /** {@inheritDoc} */
