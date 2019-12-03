@@ -205,7 +205,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
             handoffQueue.offer(bagEntry)) {
             return;
          }
-         //线程挂起10纳秒
+         //线程挂起10纳秒(当i==255的倍数)
          else if ((i & 0xff) == 0xff) {
             parkNanos(MICROSECONDS.toNanos(10));
          } else {
