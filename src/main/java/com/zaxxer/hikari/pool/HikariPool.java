@@ -93,15 +93,19 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    private final PoolEntryCreator postFillPoolEntryCreator = new PoolEntryCreator("After adding ");
    //*************************************************
    private final Collection<Runnable> addConnectionQueue;
+   //创建连接的线程池
    private final ThreadPoolExecutor addConnectionExecutor;
+   //关闭连接的线程池
    private final ThreadPoolExecutor closeConnectionExecutor;
-
+   //储存PoolEntry
    private final ConcurrentBag<PoolEntry> connectionBag;
-
+   //
    private final ProxyLeakTaskFactory leakTaskFactory;
+   //锁-暂停时用
    private final SuspendResumeLock suspendResumeLock;
-
+   //维护连接池的最小连接
    private final ScheduledExecutorService houseKeepingExecutorService;
+   //实际维护最小连接的Callable
    private ScheduledFuture<?> houseKeeperTask;
 
    /**
@@ -115,6 +119,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
       super(config);
 
       this.connectionBag = new ConcurrentBag<>(this);
+      //判断是否允许连接池支持暂停，不支持则全部时用空实现，如果支持，当有10000个并发同时获取连接时，第10001个线程会在获取连接的那一步暂停
       this.suspendResumeLock = config.isAllowPoolSuspension() ? new SuspendResumeLock() : SuspendResumeLock.FAUX_LOCK;
 
       this.houseKeepingExecutorService = initializeHouseKeepingExecutorService();
@@ -630,6 +635,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    }
 
    /**
+    * 用来创建或者初始化连接池的最小连接
     * Create/initialize the Housekeeping service {@link ScheduledExecutorService}.  If the user specified an Executor
     * to be used in the {@link HikariConfig}, then we use that.  If no Executor was specified (typical), then create
     * an Executor and configure it.

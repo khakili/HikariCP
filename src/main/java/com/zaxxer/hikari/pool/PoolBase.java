@@ -51,38 +51,57 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 abstract class PoolBase
 {
    private final Logger logger = LoggerFactory.getLogger(PoolBase.class);
-
+   //维护Hikari配置
    public final HikariConfig config;
+   //追踪用
    IMetricsTrackerDelegate metricsTracker;
-
+   //连接池名称
    protected final String poolName;
-
+   //
    volatile String catalog;
+   //
    final AtomicReference<Exception> lastConnectionFailure;
-
+   //
    long connectionTimeout;
+   //
    long validationTimeout;
 
+   //
    private static final String[] RESET_STATES = {"readOnly", "autoCommit", "isolation", "catalog", "netTimeout", "schema"};
+   //
    private static final int UNINITIALIZED = -1;
+   //
    private static final int TRUE = 1;
+   //
    private static final int FALSE = 0;
 
+   //
    private int networkTimeout;
+   //
    private int isNetworkTimeoutSupported;
+   //
    private int isQueryTimeoutSupported;
+   //
    private int defaultTransactionIsolation;
+   //
    private int transactionIsolation;
+   //
    private Executor netTimeoutExecutor;
+   //
    private DataSource dataSource;
 
+   //
    private final String schema;
+   //
    private final boolean isReadOnly;
+   //
    private final boolean isAutoCommit;
 
+   //
    private final boolean isUseJdbc4Validation;
+   //
    private final boolean isIsolateInternalQueries;
-
+   //
    private volatile boolean isValidChecked;
 
    /**
