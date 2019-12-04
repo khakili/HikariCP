@@ -59,7 +59,7 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
  */
 public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseable {
    private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentBag.class);
-   //存储entry的Cow集合
+   //存储全量entry的Cow集合
    private final CopyOnWriteArrayList<T> sharedList;
    //标记ThreadLocal中的引用是否为弱引用
    private final boolean weakThreadLocals;
