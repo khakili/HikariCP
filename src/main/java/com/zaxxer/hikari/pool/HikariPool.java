@@ -78,17 +78,20 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    public static final int POOL_SUSPENDED = 1;
    //池状态-停止
    public static final int POOL_SHUTDOWN = 2;
-
+   //池的状态
    public volatile int poolState;
-
+   //
    private final long aliveBypassWindowMs = Long.getLong("com.zaxxer.hikari.aliveBypassWindowMs", MILLISECONDS.toMillis(500));
+   //
    private final long housekeepingPeriodMs = Long.getLong("com.zaxxer.hikari.housekeeping.periodMs", SECONDS.toMillis(30));
-
+   //******一些提示信息
    private static final String EVICTED_CONNECTION_MESSAGE = "(connection was evicted)";
    private static final String DEAD_CONNECTION_MESSAGE = "(connection is dead)";
-
+   //*****************
+   //**************PoolEntry创建者（PoolEntry会异步创建）
    private final PoolEntryCreator poolEntryCreator = new PoolEntryCreator(null /*logging prefix*/);
    private final PoolEntryCreator postFillPoolEntryCreator = new PoolEntryCreator("After adding ");
+   //*************************************************
    private final Collection<Runnable> addConnectionQueue;
    private final ThreadPoolExecutor addConnectionExecutor;
    private final ThreadPoolExecutor closeConnectionExecutor;
