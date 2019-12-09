@@ -27,6 +27,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 时间操作类
  * A resolution-independent provider of current time-stamps and elapsed time
  * calculations.
  *

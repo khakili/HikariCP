@@ -22,7 +22,7 @@ import static com.zaxxer.hikari.util.ClockSource.plusMillis;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- *
+ * 动态加载配置，可以自定义轮训时间
  * @author Brett Wooldridge
  */
 public abstract class PoolStats
