@@ -38,6 +38,7 @@ import com.zaxxer.hikari.HikariConfig;
  */
 public final class PropertyElf
 {
+   //正则表达式，匹配get/is方法
    private static final Pattern GETTER_PATTERN = Pattern.compile("(get|is)[A-Z].+");
 
    private PropertyElf() {
@@ -67,6 +68,7 @@ public final class PropertyElf
    }
 
    /**
+    * 返回传入Class成员变量名称
     * Get the bean-style property names for the specified object.
     *
     * @param targetClass the target object
@@ -94,7 +96,9 @@ public final class PropertyElf
 
       return set;
    }
-
+   /**
+    *在指定对象获取指定名称的属性值
+    */
    public static Object getProperty(final String propName, final Object target)
    {
       try {
@@ -114,7 +118,7 @@ public final class PropertyElf
          }
       }
    }
-
+   //拷贝Properties对象
    public static Properties copyProperties(final Properties props)
    {
       Properties copy = new Properties();
