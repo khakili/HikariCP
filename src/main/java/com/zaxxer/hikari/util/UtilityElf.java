@@ -24,7 +24,7 @@ import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- *
+ * 一些常用的工具类
  * @author Brett Wooldridge
  */
 public final class UtilityElf
@@ -105,12 +105,13 @@ public final class UtilityElf
    }
 
    /**
+    * 创建线程池（单线程线程池，核心线程超时销毁）
     * Create a ThreadPoolExecutor.
     *
-    * @param queueSize the queue size
-    * @param threadName the thread name
-    * @param threadFactory an optional ThreadFactory
-    * @param policy the RejectedExecutionHandler policy
+    * @param queueSize the queue size 任务队列大小
+    * @param threadName the thread name 线程名
+    * @param threadFactory an optional ThreadFactory 线程工厂
+    * @param policy the RejectedExecutionHandler policy 拒绝策略
     * @return a ThreadPoolExecutor
     */
    public static ThreadPoolExecutor createThreadPoolExecutor(final int queueSize, final String threadName, ThreadFactory threadFactory, final RejectedExecutionHandler policy)
@@ -150,6 +151,7 @@ public final class UtilityElf
    // ***********************************************************************
 
    /**
+    * 根据事物名获取事务等级
     * Get the int value of a transaction isolation level by name.
     *
     * @param transactionIsolationName the name of the transaction isolation level

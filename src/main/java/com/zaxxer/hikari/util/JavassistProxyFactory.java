@@ -31,7 +31,7 @@ import javassist.*;
 import javassist.bytecode.ClassFile;
 
 /**
- * 创建JDBC代理工厂
+ * 创建JDBC代理工厂(使用javassist)
  * This class generates the proxy objects for {@link Connection}, {@link Statement},
  * {@link PreparedStatement}, and {@link CallableStatement}.  Additionally it injects
  * method bodies into the {@link ProxyFactory} class methods that can instantiate
@@ -42,6 +42,7 @@ import javassist.bytecode.ClassFile;
 public final class JavassistProxyFactory
 {
    private static ClassPool classPool;
+   //生成目录
    private static String genDirectory = "";
 
    public static void main(String... args) throws Exception {
