@@ -80,9 +80,9 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    public static final int POOL_SHUTDOWN = 2;
    //池的状态
    public volatile int poolState;
-   //
+   //连接空闲时间，默认500ms
    private final long aliveBypassWindowMs = Long.getLong("com.zaxxer.hikari.aliveBypassWindowMs", MILLISECONDS.toMillis(500));
-   //
+   //维护连接池时间，默认30ms
    private final long housekeepingPeriodMs = Long.getLong("com.zaxxer.hikari.housekeeping.periodMs", SECONDS.toMillis(30));
    //******一些提示信息
    private static final String EVICTED_CONNECTION_MESSAGE = "(connection was evicted)";
@@ -99,11 +99,11 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    private final ThreadPoolExecutor closeConnectionExecutor;
    //储存PoolEntry
    private final ConcurrentBag<PoolEntry> connectionBag;
-   //
+   //连接泄露检测任务工厂
    private final ProxyLeakTaskFactory leakTaskFactory;
    //锁-暂停时用
    private final SuspendResumeLock suspendResumeLock;
-   //维护连接池的最小连接
+   //维护连接池连接数的定时执行器
    private final ScheduledExecutorService houseKeepingExecutorService;
    //实际维护最小连接的Callable
    private ScheduledFuture<?> houseKeeperTask;
@@ -217,6 +217,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    }
 
    /**
+    * 停止线程池，关闭连接
     * Shutdown the pool, closing all idle connections and aborting or closing
     * active connections.
     *
@@ -392,8 +393,10 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
 
    /** {@inheritDoc} */
    @Override
+   //将连接池设为暂停状态
    public synchronized void suspendPool()
    {
+      //不支持暂停
       if (suspendResumeLock == SuspendResumeLock.FAUX_LOCK) {
          throw new IllegalStateException(poolName + " - is not suspendable");
       }
@@ -404,6 +407,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    }
 
    /** {@inheritDoc} */
+   //将暂停的连接池还原为正常状态
    @Override
    public synchronized void resumePool()
    {
@@ -769,6 +773,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    }
 
    /**
+    * 用来维护连接池中的连接（维护最小连接数和释放空闲连接）
     * The house keeping task to retire and maintain minimum idle connections.
     */
    private final class HouseKeeper implements Runnable
