@@ -105,7 +105,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    private final SuspendResumeLock suspendResumeLock;
    //维护连接池连接数的定时执行器
    private final ScheduledExecutorService houseKeepingExecutorService;
-   //实际维护最小连接的Callable
+   //实际维护最小连接的task
    private ScheduledFuture<?> houseKeeperTask;
 
    /**
@@ -346,6 +346,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    @Override
    public void addBagItem(final int waiting)
    {
+      //创建连接的队列大小是否比等待的线程数多（是否需要出发创建连接的操作）
       final boolean shouldAdd = waiting - addConnectionQueue.size() >= 0; // Yes, >= is intentional.
       if (shouldAdd) {
          addConnectionExecutor.submit(poolEntryCreator);
@@ -480,6 +481,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    // ***********************************************************************
 
    /**
+    * 创建PoolEntry实例
     * Creating new poolEntry.  If maxLifetime is configured, create a future End-of-life task with 2.5% variance from
     * the maxLifetime time to ensure there is no massive die-off of Connections in the pool.
     */
@@ -487,15 +489,18 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    {
       try {
          final PoolEntry poolEntry = newPoolEntry();
-
+         //最大生命周期
          final long maxLifetime = config.getMaxLifetime();
          if (maxLifetime > 0) {
             // variance up to 2.5% of the maxlifetime
+            //最大生命周期是否大于10000，如果已经大于了，则生命周期不做改变，否则在0-2.5%*maxLifeTime间随机取一个变化值
             final long variance = maxLifetime > 10_000 ? ThreadLocalRandom.current().nextLong( maxLifetime / 40 ) : 0;
             final long lifetime = maxLifetime - variance;
+            //在lifeTime ms后执行回收连接操作
             poolEntry.setFutureEol(houseKeepingExecutorService.schedule(
                () -> {
                   if (softEvictConnection(poolEntry, "(connection has passed maxLifetime)", false /* not owner */)) {
+                     //回收成功，重新填充连接池
                      addBagItem(connectionBag.getWaitingThreadCount());
                   }
                },
@@ -569,6 +574,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
     */
    private void checkFailFast()
    {
+      //判断是否需要快速失败检测
       final long initializationTimeout = config.getInitializationFailTimeout();
       if (initializationTimeout < 0) {
          return;
@@ -576,8 +582,10 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
 
       final long startTime = currentTime();
       do {
+         //创建PoolEntry，如果没有创建成功会抛异常
          final PoolEntry poolEntry = createPoolEntry();
          if (poolEntry != null) {
+            //连接不可空闲的时候，直接回收
             if (config.getMinimumIdle() > 0) {
                connectionBag.add(poolEntry);
                logger.debug("{} - Added connection {}", poolName, poolEntry.connection);
@@ -592,8 +600,9 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
          if (getLastConnectionFailure() instanceof ConnectionSetupException) {
             throwPoolInitializationException(getLastConnectionFailure().getCause());
          }
-
+         //休眠1s
          quietlySleep(SECONDS.toMillis(1));
+         //创建连接的时间是否比initializationTimeout时间长
       } while (elapsedMillis(startTime) < initializationTimeout);
 
       if (initializationTimeout > 0) {
@@ -751,9 +760,10 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
                }
                return Boolean.TRUE;
             }
-
+            //从数据库获取连接失败，休眠一会
             // failed to get connection from db, sleep and retry
             quietlySleep(sleepBackoff);
+            //重新计算需要休眠的时间（最大10ms）
             sleepBackoff = Math.min(SECONDS.toMillis(10), Math.min(connectionTimeout, (long) (sleepBackoff * 1.5)));
          }
          // Pool is suspended or shutdown or at max size
