@@ -100,7 +100,7 @@ final class PoolEntry implements IConcurrentBagEntry
    {
       this.endOfLife = endOfLife;
    }
-
+   //创建Connection代理，代理类由com.zaxxer.hikari.util.JavassistProxyFactory生成（使用Javassist直接生成字节码）
    Connection createProxyConnection(final ProxyLeakTask leakTask, final long now)
    {
       return ProxyFactory.getProxyConnection(this, connection, openStatements, leakTask, now, isReadOnly, isAutoCommit);

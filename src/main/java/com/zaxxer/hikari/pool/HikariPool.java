@@ -125,38 +125,42 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
       this.houseKeepingExecutorService = initializeHouseKeepingExecutorService();
 
       checkFailFast();
-
+      //配置追踪工厂
       if (config.getMetricsTrackerFactory() != null) {
          setMetricsTrackerFactory(config.getMetricsTrackerFactory());
       }
       else {
          setMetricRegistry(config.getMetricRegistry());
       }
-
+      //注册健康检查
       setHealthCheckRegistry(config.getHealthCheckRegistry());
-
+      //注册MBeans
       handleMBeans(this, true);
 
       ThreadFactory threadFactory = config.getThreadFactory();
 
       LinkedBlockingQueue<Runnable> addQueue = new LinkedBlockingQueue<>(config.getMaximumPoolSize());
       this.addConnectionQueue = unmodifiableCollection(addQueue);
+      //添加连接的线程池，拒绝任务策略为直接抛弃
       this.addConnectionExecutor = createThreadPoolExecutor(addQueue, poolName + " connection adder", threadFactory, new ThreadPoolExecutor.DiscardPolicy());
+      //关闭连接线程池，拒绝策略为异步转同步
       this.closeConnectionExecutor = createThreadPoolExecutor(config.getMaximumPoolSize(), poolName + " connection closer", threadFactory, new ThreadPoolExecutor.CallerRunsPolicy());
 
       this.leakTaskFactory = new ProxyLeakTaskFactory(config.getLeakDetectionThreshold(), houseKeepingExecutorService);
 
       this.houseKeeperTask = houseKeepingExecutorService.scheduleWithFixedDelay(new HouseKeeper(), 100L, housekeepingPeriodMs, MILLISECONDS);
-
+      //如果开启了com.zaxxer.hikari.blockUntilFilled，则可以并行创建连接
       if (Boolean.getBoolean("com.zaxxer.hikari.blockUntilFilled") && config.getInitializationFailTimeout() > 1) {
+         //线程池核心数和最大线程数全部设为CPU可用核数
          addConnectionExecutor.setCorePoolSize(Runtime.getRuntime().availableProcessors());
          addConnectionExecutor.setMaximumPoolSize(Runtime.getRuntime().availableProcessors());
 
          final long startTime = currentTime();
+         //循环，直到超时或者连接数超过空闲数
          while (elapsedMillis(startTime) < config.getInitializationFailTimeout() && getTotalConnections() < config.getMinimumIdle()) {
             quietlySleep(MILLISECONDS.toMillis(100));
          }
-
+         //还原线程池，变为单线程线程池
          addConnectionExecutor.setCorePoolSize(1);
          addConnectionExecutor.setMaximumPoolSize(1);
       }
@@ -174,6 +178,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    }
 
    /**
+    * 从ConcurrentBag获取连接
     * Get a connection from the pool, or timeout after the specified number of milliseconds.
     *
     * @param hardTimeout the maximum time to wait for a connection from the pool

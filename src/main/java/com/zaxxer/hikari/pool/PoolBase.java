@@ -61,7 +61,7 @@ abstract class PoolBase
    volatile String catalog;
    //
    final AtomicReference<Exception> lastConnectionFailure;
-   //
+   //获取连接的超时时间
    long connectionTimeout;
    //
    long validationTimeout;
