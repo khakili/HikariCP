@@ -57,44 +57,44 @@ abstract class PoolBase
    IMetricsTrackerDelegate metricsTracker;
    //连接池名称
    protected final String poolName;
-   //
+   //数据库名称
    volatile String catalog;
-   //
+   //原子化记录最后的异常
    final AtomicReference<Exception> lastConnectionFailure;
    //获取连接的超时时间
    long connectionTimeout;
-   //
+   //验证连接超时时间
    long validationTimeout;
 
    //
    private static final String[] RESET_STATES = {"readOnly", "autoCommit", "isolation", "catalog", "netTimeout", "schema"};
-   //
+   //timeOut默认时间（不超时）
    private static final int UNINITIALIZED = -1;
-   //
+   //真
    private static final int TRUE = 1;
-   //
+   //假
    private static final int FALSE = 0;
 
-   //
+   //网络超时时间
    private int networkTimeout;
-   //
+   //是否支持网络超时
    private int isNetworkTimeoutSupported;
-   //
+   //是否支持查询超时
    private int isQueryTimeoutSupported;
-   //
+   //默认事务级别
    private int defaultTransactionIsolation;
-   //
+   //事务级别
    private int transactionIsolation;
-   //
+   //检测网络超时连接池
    private Executor netTimeoutExecutor;
-   //
+   //数据源
    private DataSource dataSource;
 
    //
    private final String schema;
-   //
+   //是否只读
    private final boolean isReadOnly;
-   //
+   //是否自动提交
    private final boolean isAutoCommit;
 
    //
